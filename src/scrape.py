@@ -24,7 +24,7 @@ def required_arguments(required_args):
 
 class Tool:
     """
-    Main scraping tool
+    Stronghold Paste scraping tool
     """
     def __init__(self):
         self.arg_parser = None
