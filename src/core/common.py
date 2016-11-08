@@ -8,7 +8,7 @@ class Config:
     Stores configuration values read from the passed ini file
     """
     def __init__(self, config_filepath):
-        self.config = configparser.ConfigParser()
+        self.config = configparser.ConfigParser(interpolation=None)
         self.config.read(config_filepath)
         self.init_general_section()
         self.init_logging_section()
@@ -26,6 +26,7 @@ class Config:
     def init_database_section(self):
         section = 'database'
         self.DB_FILEPATH = self.config[section].get('filepath')
+        self.DB_ID_FIELD = self.config[section].get('id_field')
 
 
 class Logger:
