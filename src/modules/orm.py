@@ -32,6 +32,12 @@ class SQLiteConnection(Base):
 
         return cursor
 
+    def execute_fetch_one_record(self, query, params=None):
+        cursor = self.execute(query, params)
+        result = cursor.fetchone()
+        cursor.close()
+        return result
+
     def execute_fetch_single_value(self, query, params=None):
         cursor = self.execute(query, params)
         result = cursor.fetchone()
@@ -62,8 +68,13 @@ class Model(Base):
     Stored names for public access:
         save
         delete
+        get_table_name
+
+    Other stored names:
+        pk
     """
     NORMALIZATION_PREFIX = '__normalize__'
+    ID_KEYWORD = 'pk'
 
     def __init__(self, context, **kwargs):
         super().__init__(context)
@@ -141,8 +152,26 @@ class Model(Base):
             self.__method__create_table(self.__property__table_name)
 
     def __method__populate_model_fields(self, kwargs):
-        for field_name in self.__property__columns:
-            setattr(self, field_name, kwargs.get(field_name))
+        # creating a new model object in case id is not provided
+        if self.ID_KEYWORD not in kwargs:
+            for field_name in self.__property__columns:
+                setattr(self, field_name, kwargs.get(field_name))
+            return
+
+        # retrieving the record otherwise
+        if self.ID_KEYWORD in kwargs:
+            record = self.connection.execute_fetch_one_record("SELECT {} "
+                                                              "FROM {} "
+                                                              "WHERE {}={}".format(', '.join(self.__property__columns),
+                                                                                   self.__property__table_name,
+                                                                                   self.context.config.DB_ID_FIELD,
+                                                                                   kwargs[self.ID_KEYWORD]))
+            if not record:
+                raise ValueError("No {} record found with {} = {}".format(type(self).__name__, self.context.config.DB_ID_FIELD, kwargs[self.ID_KEYWORD]))
+            record_dict = dict(zip(self.__property__columns, record))
+            self.__id = kwargs[self.ID_KEYWORD]
+            for field_name, field_value in record_dict.items():
+                setattr(self, field_name, field_value)
 
     def __method__normalize(self):
         self.logger.info("Normalizing the fields")
@@ -163,6 +192,9 @@ class Model(Base):
                                                      self.__id),
                                 tuple(self.__property__values),
                                 commit=True)
+
+    def get_table_name(self):
+        return self.__property__table_name
 
     def save(self):
         """
@@ -189,3 +221,21 @@ class Model(Base):
                                                      self.context.config.DB_ID_FIELD,
                                                      self.__id),
                                 commit=True)
+
+
+class ModelCollection(Base):
+    def __init__(self, context, model):
+        super().__init__(context)
+        self.model = model
+        self.connection = SQLiteConnection(self.context)
+
+    def get_the_most_recent(self):
+        model_template = self.model(self.context)
+        latest_id = self.connection.execute_fetch_single_value("SELECT {} "
+                                                               "FROM {} "
+                                                               "ORDER BY {} DESC "
+                                                               "LIMIT 1".format(self.context.config.DB_ID_FIELD,
+                                                                                model_template.get_table_name(),
+                                                                                self.context.config.DB_ID_FIELD))
+        model_object = self.model(self.context, pk=latest_id)
+        return model_object
