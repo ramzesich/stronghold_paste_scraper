@@ -13,6 +13,8 @@ class Config:
         self.init_general_section()
         self.init_logging_section()
         self.init_database_section()
+        self.init_tor_section()
+        self.init_website_section()
 
     def init_general_section(self):
         section = 'general'
@@ -31,6 +33,19 @@ class Config:
         self.DB_DT_DB_FORMAT = self.config[section].get('date_db_format')
         self.DB_UNKNOWN_AUTHOR_NAME_VARIATIONS = self.config[section].get('unknown_author_name_variations')
         self.DB_UNKNOWN_AUTHOR_DB_NAME = self.config[section].get('unknown_author_db_name')
+
+    def init_tor_section(self):
+        section = 'tor'
+        self.TOR_HTTP_PROXY = self.config[section].get('http_proxy')
+        self.TOR_HTTPS_PROXY = self.config[section].get('https_proxy')
+
+    def init_website_section(self):
+        section = 'website'
+        self.WEB_MAIN_URL = self.config[section].get('main_url')
+        self.WEB_PAGE_URL_PREFIX = self.config[section].get('page_url_prefix')
+        self.WEB_REQUEST_TIMEOUT = self.config[section].getint('request_timeout')
+        self.WEB_PARSER = self.config[section].get('parser')
+
 
 
 class Logger:
