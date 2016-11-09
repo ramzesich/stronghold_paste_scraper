@@ -1,7 +1,5 @@
-import datetime
-
-from core.common import Base
-from core.orm import Paste
+from core.models import Paste
+from modules.common import Base
 
 
 class Runner(Base):
@@ -14,4 +12,3 @@ class Runner(Base):
         paste_record.save()
         paste_record.title = "Update test"
         paste_record.save()
-        #TODO: add model values normalization

@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from core.common import Context
+from modules.common import Context
 
 
 def required_arguments(required_args):
