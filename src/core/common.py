@@ -16,7 +16,7 @@ class Config:
 
     def init_general_section(self):
         section = 'general'
-        self.DEBUG = bool(self.config[section].getint('debug'))
+        self.DEBUG = self.config[section].getboolean('debug')
 
     def init_logging_section(self):
         section = 'logging'
@@ -27,6 +27,10 @@ class Config:
         section = 'database'
         self.DB_FILEPATH = self.config[section].get('filepath')
         self.DB_ID_FIELD = self.config[section].get('id_field')
+        self.DB_DT_INPUT_FORMAT = self.config[section].get('date_input_format')
+        self.DB_DT_DB_FORMAT = self.config[section].get('date_db_format')
+        self.DB_UNKNOWN_AUTHOR_NAME_VARIATIONS = self.config[section].get('unknown_author_name_variations')
+        self.DB_UNKNOWN_AUTHOR_DB_NAME = self.config[section].get('unknown_author_db_name')
 
 
 class Logger:

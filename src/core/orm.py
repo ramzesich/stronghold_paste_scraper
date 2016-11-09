@@ -1,3 +1,4 @@
+import datetime
 import sqlite3
 
 from core.common import Base
@@ -56,19 +57,26 @@ class Model(Base):
     all the internal properties and methods are named
     starting with __property__ and __method__ respectfully.
 
+    Every method with its name prefixed with __normalize__ will be run
+    each time save() is called.
+
     Stored names for public access:
         save
         delete
     """
+    NORMALIZATION_PREFIX = '__normalize__'
+
     def __init__(self, context, **kwargs):
         super().__init__(context)
         self.__id = None
         self.__table_name = None
         self.__columns = None
+        self.__normalizations = None
         self.__method__validate_inheriting_class()
         self.__method__connect()
         self.__method__create_table_if_necessary()
         self.__method__populate_model_fields(kwargs)
+        self.__method__collect_normalization_methods()
 
     @property
     def __property__table_name(self):
@@ -93,6 +101,15 @@ class Model(Base):
     def __method__validate_inheriting_class(self):
         if not self.FIELDS:
             raise NotImplementedError("Inheriting class must provide the FIELDS structure!")
+
+    def __method__collect_normalization_methods(self):
+        self.logger.info("Collecting normalization methods")
+        self.__normalizations = [getattr(self, method)
+                                 for method
+                                 in dir(self)
+                                 if callable(getattr(self, method))
+                                 and getattr(self, method).__name__.startswith(self.NORMALIZATION_PREFIX)]
+        self.logger.debug("Collected: %s", self.__normalizations)
 
     def __method__get_database_field_type(self, field_type):
         database_field_type = 'text'
@@ -128,6 +145,14 @@ class Model(Base):
         for field_name in self.__property__columns:
             setattr(self, field_name, kwargs.get(field_name))
 
+    def __method__normalize(self):
+        self.logger.info("Normalizing the fields")
+        for normalization_method in self.__normalizations:
+            try:
+                normalization_method()
+            except Exception as e:
+                self.logger.error("%s failed: %s", normalization_method.__name__, e)
+
     def __method__update(self):
         self.logger.info("Updating a %s record", type(self).__name__)
         value_placeholders = ', '.join("{}={}".format(field_name, self.connection.placeholder) for field_name in self.__property__columns)
@@ -144,6 +169,7 @@ class Model(Base):
         """
         Stores the model instance as a new record in the representing table
         """
+        self.__method__normalize()
         if self.__id:
             self.__method__update()
             return
@@ -171,3 +197,48 @@ class Paste(Model):
               ('title', 'string'),
               ('content', 'string'),
               ('date', 'date')]
+
+    def __normalize__date(self):
+        self.logger.info("Normalizing date")
+        original_date = self.date
+        if original_date is None:
+            self.logger.debug("Date is missing: nothing to normalize")
+            return
+
+        date_object = datetime.datetime.strptime(original_date, self.context.config.DB_DT_INPUT_FORMAT)
+        self.date = date_object.strftime(self.context.config.DB_DT_DB_FORMAT)
+        self.logger.debug("Date %s normalized to %s", original_date, self.date)
+
+    def __normalize__author(self):
+        self.logger.info("Normalizing author name")
+        original_author = self.author
+        if original_author is None:
+            self.logger.debug("Author name is missing: nothing to normalize")
+            return
+
+        name_variations = set(name.strip().lower() for name in self.context.config.DB_UNKNOWN_AUTHOR_NAME_VARIATIONS.split(','))
+        self.logger.debug("Collected unknown author name variations: %s", name_variations)
+        if original_author.strip().lower() in name_variations:
+            self.author = self.context.config.DB_UNKNOWN_AUTHOR_DB_NAME
+        self.author = self.author.strip()
+        self.logger.debug("Author name %s normalized to %s", original_author, self.author)
+
+    def __normalize__title(self):
+        self.logger.info("Normalizing title")
+        original_title = self.title
+        if original_title is None:
+            self.logger.debug("Title is missing: nothing to normalize")
+            return
+
+        self.title = original_title.strip()
+        self.logger.debug("Title %s normalized to %s", original_title, self.title)
+
+    def __normalize__content(self):
+        self.logger.info("Normalizing content")
+        original_content = self.content
+        if original_content is None:
+            self.logger.debug("Content is missing: nothing to normalize")
+            return
+
+        self.content = original_content.strip()
+        self.logger.debug("Title %s normalized to %s", original_content, self.content)
