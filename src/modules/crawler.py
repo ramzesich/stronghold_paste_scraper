@@ -19,9 +19,7 @@ class Navigator(Base):
         landing_page = WebRequest(self.context).get(self.context.config.WEB_MAIN_URL)
         parser = Parser(self.context, landing_page)
         navigation_numbers = parser.get_navigation_numbers()
-        url_list = ['{}{}'.format(self.context.config.WEB_PAGE_URL_PREFIX, page_number)
-                    for page_number
-                    in range(navigation_numbers[0], navigation_numbers[-1] + 1)]
-        url_list.insert(0, self.context.config.WEB_MAIN_URL)
-        for url in url_list:
-            yield url
+
+        yield self.context.config.WEB_MAIN_URL
+        for page_number in range(navigation_numbers[0], navigation_numbers[-1] + 1):
+            yield '{}{}'.format(self.context.config.WEB_PAGE_URL_PREFIX, page_number)
