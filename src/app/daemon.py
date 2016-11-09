@@ -1,4 +1,4 @@
-from core.models import Paste
+from app.models import Paste
 from modules.common import Base
 
 

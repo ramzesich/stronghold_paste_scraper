@@ -58,7 +58,7 @@ class Tool:
     @required_arguments(['config_filepath'])
     def pastes(self):
         self._init_context(config_filepath=self.arguments.config_filepath)
-        from core.daemon import Runner
+        from app.daemon import Runner
         Runner(self.context).go()
 
     def run(self):
