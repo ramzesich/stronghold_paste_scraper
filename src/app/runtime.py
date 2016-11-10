@@ -46,7 +46,10 @@ class Runner(Base):
             page_pastes, continue_to_the_next_page = list(self._extract_page_pastes(url, latest_paste))
             if page_pastes:
                 self._store_extracted_pastes(page_pastes, page_number)
-            if not continue_to_the_next_page:
-                self.logger.info("No new pastes found on page %s", page_number)
+            elif not continue_to_the_next_page:
+                self.logger.info("No new pastes found on page %s: finishing", page_number)
                 break
-        self.logger.info("Finished")
+            if not continue_to_the_next_page:
+                self.logger.info("Reached old pastes on page %s: finishing", page_number)
+                break
+        self.logger.info("Done")

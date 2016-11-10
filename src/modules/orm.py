@@ -4,6 +4,9 @@ from modules.common import Base
 
 
 class SQLiteConnection(Base):
+    """
+    General class to connect to and query an SQLite database
+    """
     def __init__(self, context):
         super().__init__(context)
         self._connection = None
@@ -56,7 +59,7 @@ class SQLiteConnection(Base):
 
 class Model(Base):
     """
-    Represents a single database table.
+    Abstract class representing a single database table.
 
     To lessen the possibility of collision with column names,
     all the internal properties and methods are named
@@ -73,7 +76,6 @@ class Model(Base):
 
     Other stored names:
         pk: for primary key
-        order_by: field name to perform ordering by
     """
     NORMALIZATION_PREFIX = '__normalize__'
     ID_KEYWORD = 'pk'
@@ -170,7 +172,7 @@ class Model(Base):
             self.__method__create_table(self.get_table_name())
 
     def __method__populate_model_fields(self, kwargs):
-        # creating a new model object in case id is not provided
+        # creating a new model instance in case id is not provided
         if self.ID_KEYWORD not in kwargs:
             for field_name in self.__property__columns:
                 setattr(self, field_name, kwargs.get(field_name))
@@ -194,6 +196,7 @@ class Model(Base):
     def __method__normalize_if_necessary(self):
         self.logger.debug("Normalizing the fields")
         if self.__id:
+            # skipping normalization if the model instance was retrieved from the database
             self.logger.debug("Normalization not needed")
             return
 
@@ -242,6 +245,9 @@ class Model(Base):
 
 
 class ModelCollection(Base):
+    """
+    A collection class providing tools to work with multiple model instances
+    """
     def __init__(self, context, model):
         super().__init__(context)
         self.model = model

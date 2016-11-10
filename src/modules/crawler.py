@@ -6,10 +6,13 @@ from modules.tor import WebRequest
 
 
 class Parser(Base):
+    """
+    Parses a Stronghold Paste web page
+    """
     def __init__(self, context, page):
         super().__init__(context)
         self.page = page
-        self.soup = BeautifulSoup(page, self.context.config.WEB_PARSER)
+        self.soup = BeautifulSoup(page, self.context.config.PARSER_ENGINE)
 
     def get_navigation_numbers(self):
         return sorted(int(anchor.text) for anchor in self.soup.find('ul', 'pagination').find_all('a') if anchor.text.isnumeric())
@@ -29,7 +32,13 @@ class Parser(Base):
 
 
 class Navigator(Base):
+    """
+    Navigates through the Stronghold Paste using its pagination section
+    """
     def navigate(self):
+        """
+        :return: web page url, web page number
+        """
         landing_page = WebRequest(self.context).get(self.context.config.WEB_MAIN_URL)
         parser = Parser(self.context, landing_page)
         navigation_numbers = parser.get_navigation_numbers()

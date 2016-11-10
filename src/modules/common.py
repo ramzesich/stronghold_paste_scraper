@@ -15,6 +15,7 @@ class Config:
         self.init_database_section()
         self.init_tor_section()
         self.init_website_section()
+        self.init_parser_section()
 
     def init_general_section(self):
         section = 'general'
@@ -44,8 +45,10 @@ class Config:
         self.WEB_MAIN_URL = self.config[section].get('main_url')
         self.WEB_PAGE_URL_PREFIX = self.config[section].get('page_url_prefix')
         self.WEB_REQUEST_TIMEOUT = self.config[section].getint('request_timeout')
-        self.WEB_PARSER = self.config[section].get('parser')
 
+    def init_parser_section(self):
+        section = 'parser'
+        self.PARSER_ENGINE = self.config[section].get('engine')
 
 
 class Logger:
