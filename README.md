@@ -18,5 +18,5 @@ You may use a TOR Docker image for that purpose. For example:
 `docker run -p 9050:9050 --name tor osminogin/tor-simple`
 
 Pull and run the Stronghold Paste scraper Docker image:
-`docker run shemsu/strongscrape`
+`docker run --name scraper shemsu/strongscrape`
 
