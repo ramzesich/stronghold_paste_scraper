@@ -164,8 +164,7 @@ class Model(Base):
         if self.connection.execute_fetch_single_value("SELECT name "
                                                       "FROM sqlite_master "
                                                       "WHERE type={placeholder} "
-                                                      "AND name={placeholder}".format(
-            placeholder=self.connection.placeholder),
+                                                      "AND name={placeholder}".format(placeholder=self.connection.placeholder),
                                                       ('table', self.get_table_name())):
             self.logger.debug("Table %s already exists", self.get_table_name())
         else:
