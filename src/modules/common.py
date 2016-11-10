@@ -20,6 +20,7 @@ class Config:
     def init_general_section(self):
         section = 'general'
         self.DEBUG = self.config[section].getboolean('debug')
+        self.RUNTIME_WINDOW_IN_HOURS = self.config[section].getint('runtime_window_in_hours')
 
     def init_logging_section(self):
         section = 'logging'

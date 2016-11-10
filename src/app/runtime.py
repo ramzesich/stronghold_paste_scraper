@@ -1,7 +1,8 @@
-from app.models import Paste
+import time
 
+from app.models import Paste
 from modules.common import Base
-from modules.crawler import Navigator, Parser
+from modules.scraper import Navigator, Parser
 from modules.orm import ModelCollection
 from modules.tor import WebRequest
 
@@ -39,7 +40,7 @@ class Runner(Base):
         self.logger.info("Storing pastes extracted from page %s", page_number)
         self.model_collection.store(pastes)
 
-    def go(self):
+    def _crawl(self):
         self.logger.info("Pastes scraper started")
         latest_paste = self.model_collection.get_the_most_recent()
         for url, page_number in self.navigator.navigate():
@@ -53,3 +54,10 @@ class Runner(Base):
                 self.logger.info("Reached old pastes on page %s: finishing", page_number)
                 break
         self.logger.info("Done")
+
+    def go(self):
+        self.logger.info("Launching the runtime")
+        while True:
+            self._crawl()
+            self.logger.info("Sleeping for the next %s hour%s", self.context.config.RUNTIME_WINDOW_IN_HOURS, 's' if self.context.config.RUNTIME_WINDOW_IN_HOURS > 1 else '')
+            time.sleep(self.context.config.RUNTIME_WINDOW_IN_HOURS * 3600)
