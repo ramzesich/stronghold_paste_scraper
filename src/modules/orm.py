@@ -87,6 +87,16 @@ class Model(Base):
         self.__method__create_table_if_necessary()
         self.__method__populate_model_fields(kwargs)
         self.__method__collect_normalization_methods()
+        self.__method__normalize()
+
+    def __eq__(self, other):
+        for column in self.__property__columns:
+            if getattr(self, column) != getattr(other, column):
+                return False
+        return True
+
+    def __str__(self):
+        return ", ".join("{}: {}".format(column, getattr(self, column)) for column in self.__property__columns)
 
     @property
     def __property__table_name(self):
@@ -200,7 +210,6 @@ class Model(Base):
         """
         Stores the model instance as a new record in the representing table
         """
-        self.__method__normalize()
         if self.__id:
             self.__method__update()
             return
@@ -237,5 +246,8 @@ class ModelCollection(Base):
                                                                "LIMIT 1".format(self.context.config.DB_ID_FIELD,
                                                                                 model_template.get_table_name(),
                                                                                 self.context.config.DB_ID_FIELD))
+        if not latest_id:
+            return None
+
         model_object = self.model(self.context, pk=latest_id)
         return model_object

@@ -41,7 +41,7 @@ class Paste(Model):
             self.logger.debug("Title is missing: nothing to normalize")
             return
 
-        self.title = original_title.strip()
+        self.title = original_title.strip().replace('\n', ' ').replace('\r', '')
         self.logger.debug("Title %s normalized to %s", original_title, self.title)
 
     def __normalize__content(self):
@@ -53,3 +53,6 @@ class Paste(Model):
 
         self.content = original_content.strip()
         self.logger.debug("Title %s normalized to %s", original_content, self.content)
+
+    def __str__(self):
+        return ", ".join("{}: {}".format(column, getattr(self, column)) for column in ['author', 'title', 'date'])

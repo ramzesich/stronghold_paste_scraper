@@ -15,5 +15,5 @@ class WebRequest(Base):
             result = requests.get(url, proxies=self._proxies, timeout=self.context.config.WEB_REQUEST_TIMEOUT)
         except requests.RequestException as e:
             self.logger.error("Error when requesting URL %s: %s", url, e)
-            return
+            return None
         return result.json() if json else result.text

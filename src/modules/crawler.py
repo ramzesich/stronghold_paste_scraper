@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 
+from app.models import Paste
 from modules.common import Base
 from modules.tor import WebRequest
 
@@ -12,6 +13,19 @@ class Parser(Base):
 
     def get_navigation_numbers(self):
         return sorted(int(anchor.text) for anchor in self.soup.find('ul', 'pagination').find_all('a') if anchor.text.isnumeric())
+
+    def extract_new_paste(self):
+        for paste_canvas in self.soup.find_all('div', 'col-sm-12'):
+            header = paste_canvas.find('div', 'pre-header')
+            if not header:
+                continue
+            title = header.find('h4').text
+            content = paste_canvas.find('ol').text
+            footer = paste_canvas.find('div', 'pre-footer').find('div', 'col-sm-6').text
+            author, date = footer.split("at")
+            author = author.replace("Posted by", "")
+            date = date.strip()
+            yield Paste(self.context, author=author, title=title, content=content, date=date)
 
 
 class Navigator(Base):
