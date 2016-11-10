@@ -12,7 +12,7 @@ class Parser(Base):
     def __init__(self, context, page):
         super().__init__(context)
         self.page = page
-        self.soup = BeautifulSoup(page, self.context.config.PARSER_ENGINE)
+        self.soup = BeautifulSoup(page, context.config.PARSER_ENGINE)
 
     def get_navigation_numbers(self):
         return sorted(int(anchor.text) for anchor in self.soup.find('ul', 'pagination').find_all('a') if anchor.text.isnumeric())
@@ -40,6 +40,8 @@ class Navigator(Base):
         :return: web page url, web page number
         """
         landing_page = WebRequest(self.context).get(self.context.config.WEB_MAIN_URL)
+        if not landing_page:
+            raise StopIteration
         parser = Parser(self.context, landing_page)
         navigation_numbers = parser.get_navigation_numbers()
 
