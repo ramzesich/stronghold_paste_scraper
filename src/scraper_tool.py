@@ -35,7 +35,8 @@ class Tool:
         self._parse_arguments()
 
     def _init_modules(self):
-        self.modules = {'pastes': (self.pastes, "scrape latest pastes and store those in the database")}
+        self.modules = {'pastes': (self.pastes, "scrape latest pastes and store those in the database"),
+                        'createdb': (self.create_db, "create database and required tables")}
 
     def _init_arguments(self):
         arg_parser = self.arg_parser
@@ -57,16 +58,30 @@ class Tool:
 
     @required_arguments(['config_filepath'])
     def pastes(self):
-        self._init_context(config_filepath=self.arguments.config_filepath)
         from app.supervisor import Runner
+
         Runner(self.context).go()
+
+    @required_arguments(['config_filepath'])
+    def create_db(self):
+        import inspect
+        from app import models
+        from modules.orm import Model
+
+        for attr_tuple in inspect.getmembers(models):
+            model = attr_tuple[-1]
+            if inspect.isclass(model) and issubclass(model, Model) and model != Model:
+                self.logger.info("Creating table for %s", model)
+                model.create_table_if_necessary(self.context)
 
     def run(self):
         module, _ = self.modules[self.arguments.module]
+        self._init_context(config_filepath=self.arguments.config_filepath)
+        self.logger = self.context.create_logger("Scraping tool")
         try:
             module()
         except KeyboardInterrupt:
-            self.context.create_logger("Scraping tool").info("Interrupt signal caught. Exiting.")
+            self.logger.info("Interrupt signal caught. Exiting.")
             exit(0)
 
 

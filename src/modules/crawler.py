@@ -34,6 +34,6 @@ class Navigator(Base):
         parser = Parser(self.context, landing_page)
         navigation_numbers = parser.get_navigation_numbers()
 
-        yield self.context.config.WEB_MAIN_URL
+        yield self.context.config.WEB_MAIN_URL, 1
         for page_number in range(navigation_numbers[0], navigation_numbers[-1] + 1):
-            yield '{}{}'.format(self.context.config.WEB_PAGE_URL_PREFIX, page_number)
+            yield '{}{}'.format(self.context.config.WEB_PAGE_URL_PREFIX, page_number), page_number

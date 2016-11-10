@@ -66,28 +66,29 @@ class Model(Base):
     each time save() is called.
 
     Stored names for public access:
-        save
+        create_table_if_necessary
         delete
         get_table_name
+        save
 
     Other stored names:
-        pk
+        pk: for primary key
+        order_by: field name to perform ordering by
     """
     NORMALIZATION_PREFIX = '__normalize__'
     ID_KEYWORD = 'pk'
+    ORDER_BY = None
 
     def __init__(self, context, **kwargs):
         super().__init__(context)
         self.__id = None
-        self.__table_name = None
         self.__columns = None
         self.__normalizations = None
         self.__method__validate_inheriting_class()
         self.__method__connect()
-        self.__method__create_table_if_necessary()
         self.__method__populate_model_fields(kwargs)
         self.__method__collect_normalization_methods()
-        self.__method__normalize()
+        self.__method__normalize_if_necessary()
 
     def __eq__(self, other):
         for column in self.__property__columns:
@@ -98,12 +99,18 @@ class Model(Base):
     def __str__(self):
         return ", ".join("{}: {}".format(column, getattr(self, column)) for column in self.__property__columns)
 
-    @property
-    def __property__table_name(self):
-        if not self.__table_name:
-            model_name = type(self).__name__.lower()
-            self.__table_name = 'tbl_{}{}'.format(model_name, '' if model_name.endswith('s') else 's')
-        return self.__table_name
+    def __del__(self):
+        self.connection.close()
+
+    @classmethod
+    def get_table_name(cls):
+        model_name = cls.__name__.lower()
+        return 'tbl_{}{}'.format(model_name, '' if model_name.endswith('s') else 's')
+
+    @classmethod
+    def create_table_if_necessary(cls, context):
+        instance = cls(context)
+        instance.__method__create_table_if_necessary()
 
     @property
     def __property__columns(self):
@@ -123,7 +130,7 @@ class Model(Base):
             raise NotImplementedError("Inheriting class must provide the FIELDS structure!")
 
     def __method__collect_normalization_methods(self):
-        self.logger.info("Collecting normalization methods")
+        self.logger.debug("Collecting normalization methods")
         self.__normalizations = [getattr(self, method)
                                  for method
                                  in dir(self)
@@ -140,7 +147,7 @@ class Model(Base):
         return database_field_type
 
     def __method__create_table(self, table_name):
-        self.logger.info("Creating table %s", table_name)
+        self.logger.debug("Creating table %s", table_name)
         query_parts = ["CREATE TABLE {} ".format(table_name)]
         query_parts.append("(")
         columns = ["{} integer primary key".format(self.context.config.DB_ID_FIELD)]
@@ -151,15 +158,16 @@ class Model(Base):
         self.connection.execute(query="".join(query_parts), commit=True)
 
     def __method__create_table_if_necessary(self):
-        self.logger.debug("Checking whether table %s has to be created", self.__property__table_name)
+        self.logger.debug("Checking whether table %s has to be created", self.get_table_name())
         if self.connection.execute_fetch_single_value("SELECT name "
                                                       "FROM sqlite_master "
                                                       "WHERE type={placeholder} "
-                                                      "AND name={placeholder}".format(placeholder=self.connection.placeholder),
-                                                      ('table', self.__property__table_name)):
-            self.logger.debug("Table %s already exists", self.__property__table_name)
+                                                      "AND name={placeholder}".format(
+            placeholder=self.connection.placeholder),
+                                                      ('table', self.get_table_name())):
+            self.logger.debug("Table %s already exists", self.get_table_name())
         else:
-            self.__method__create_table(self.__property__table_name)
+            self.__method__create_table(self.get_table_name())
 
     def __method__populate_model_fields(self, kwargs):
         # creating a new model object in case id is not provided
@@ -173,7 +181,7 @@ class Model(Base):
             record = self.connection.execute_fetch_one_record("SELECT {} "
                                                               "FROM {} "
                                                               "WHERE {}={}".format(', '.join(self.__property__columns),
-                                                                                   self.__property__table_name,
+                                                                                   self.get_table_name(),
                                                                                    self.context.config.DB_ID_FIELD,
                                                                                    kwargs[self.ID_KEYWORD]))
             if not record:
@@ -183,8 +191,12 @@ class Model(Base):
             for field_name, field_value in record_dict.items():
                 setattr(self, field_name, field_value)
 
-    def __method__normalize(self):
-        self.logger.info("Normalizing the fields")
+    def __method__normalize_if_necessary(self):
+        self.logger.debug("Normalizing the fields")
+        if self.__id:
+            self.logger.debug("Normalization not needed")
+            return
+
         for normalization_method in self.__normalizations:
             try:
                 normalization_method()
@@ -192,19 +204,16 @@ class Model(Base):
                 self.logger.error("%s failed: %s", normalization_method.__name__, e)
 
     def __method__update(self):
-        self.logger.info("Updating a %s record", type(self).__name__)
+        self.logger.debug("Updating a %s record", type(self).__name__)
         value_placeholders = ', '.join("{}={}".format(field_name, self.connection.placeholder) for field_name in self.__property__columns)
         self.connection.execute("UPDATE {} "
                                 "SET {} "
-                                "WHERE {}={}".format(self.__property__table_name,
+                                "WHERE {}={}".format(self.get_table_name(),
                                                      value_placeholders,
                                                      self.context.config.DB_ID_FIELD,
                                                      self.__id),
                                 tuple(self.__property__values),
                                 commit=True)
-
-    def get_table_name(self):
-        return self.__property__table_name
 
     def save(self):
         """
@@ -214,9 +223,9 @@ class Model(Base):
             self.__method__update()
             return
 
-        self.logger.info("Storing a %s record", type(self).__name__)
+        self.logger.debug("Storing a %s record", type(self).__name__)
         placeholders = ('{}, '.format(self.connection.placeholder) * len(self.FIELDS)).strip(', ')
-        self.connection.execute("INSERT INTO {} ({}) VALUES ({})".format(self.__property__table_name,
+        self.connection.execute("INSERT INTO {} ({}) VALUES ({})".format(self.get_table_name(),
                                                                          ', '.join(self.__property__columns),
                                                                          placeholders),
                                 tuple(self.__property__values),
@@ -224,9 +233,9 @@ class Model(Base):
         self.__id = self.connection.execute_fetch_single_value("SELECT last_insert_rowid()")
 
     def delete(self):
-        self.logger.info("Deleting a %s record", type(self).__name__)
+        self.logger.debug("Deleting a %s record", type(self).__name__)
         self.connection.execute("DELETE FROM {} "
-                                "WHERE {}={}".format(self.__property__table_name,
+                                "WHERE {}={}".format(self.get_table_name(),
                                                      self.context.config.DB_ID_FIELD,
                                                      self.__id),
                                 commit=True)
@@ -239,15 +248,27 @@ class ModelCollection(Base):
         self.connection = SQLiteConnection(self.context)
 
     def get_the_most_recent(self):
-        model_template = self.model(self.context)
+        self.logger.debug("Retrieving the most recent model instance")
         latest_id = self.connection.execute_fetch_single_value("SELECT {} "
                                                                "FROM {} "
                                                                "ORDER BY {} DESC "
                                                                "LIMIT 1".format(self.context.config.DB_ID_FIELD,
-                                                                                model_template.get_table_name(),
-                                                                                self.context.config.DB_ID_FIELD))
+                                                                                self.model.get_table_name(),
+                                                                                self.model.ORDER_BY))
         if not latest_id:
             return None
 
         model_object = self.model(self.context, pk=latest_id)
         return model_object
+
+    def store(self, model_list):
+        self.logger.debug("Storing the list of model instances")
+        placeholders = ('{}, '.format(self.connection.placeholder) * len(self.model.FIELDS)).strip(', ')
+        columns = [field_name for field_name, _ in self.model.FIELDS]
+        values = [tuple(getattr(model_instance, column) for column in columns) for model_instance in model_list]
+        self.connection.execute("INSERT INTO {} ({}) VALUES ({})".format(self.model.get_table_name(),
+                                                                         ', '.join(columns),
+                                                                         placeholders),
+                                values,
+                                many=True,
+                                commit=True)

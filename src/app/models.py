@@ -8,9 +8,10 @@ class Paste(Model):
               ('title', 'string'),
               ('content', 'string'),
               ('date', 'date')]
+    ORDER_BY = 'date'
 
     def __normalize__date(self):
-        self.logger.info("Normalizing date")
+        self.logger.debug("Normalizing date")
         original_date = self.date
         if original_date is None:
             self.logger.debug("Date is missing: nothing to normalize")
@@ -21,7 +22,7 @@ class Paste(Model):
         self.logger.debug("Date %s normalized to %s", original_date, self.date)
 
     def __normalize__author(self):
-        self.logger.info("Normalizing author name")
+        self.logger.debug("Normalizing author name")
         original_author = self.author
         if original_author is None:
             self.logger.debug("Author name is missing: nothing to normalize")
@@ -35,7 +36,7 @@ class Paste(Model):
         self.logger.debug("Author name %s normalized to %s", original_author, self.author)
 
     def __normalize__title(self):
-        self.logger.info("Normalizing title")
+        self.logger.debug("Normalizing title")
         original_title = self.title
         if original_title is None:
             self.logger.debug("Title is missing: nothing to normalize")
@@ -45,7 +46,7 @@ class Paste(Model):
         self.logger.debug("Title %s normalized to %s", original_title, self.title)
 
     def __normalize__content(self):
-        self.logger.info("Normalizing content")
+        self.logger.debug("Normalizing content")
         original_content = self.content
         if original_content is None:
             self.logger.debug("Content is missing: nothing to normalize")
