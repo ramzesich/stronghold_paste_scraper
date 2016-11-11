@@ -23,9 +23,10 @@ RUN git clone https://github.com/shemsu/stronghold_paste_scraper.git
 RUN pip3 install --upgrade pip && pip3 install -r /stronghold_paste_scraper/conf/requirements.txt
 
 RUN mkdir -p /stronghold_paste_scraper/data
-RUN cd /stronghold_paste_scraper/src/ && python3 scraper_tool.py createdb -c /stronghold_paste_scraper/conf/settings.ini
 
 WORKDIR /stronghold_paste_scraper/src
 
-CMD python3 /stronghold_paste_scraper/src/scraper_tool.py pastes -c /stronghold_paste_scraper/conf/settings.ini
+RUN python3 scraper_tool.py createdb -c ../conf/settings.ini
+
+CMD python3 scraper_tool.py pastes -c ../conf/settings.ini
 
