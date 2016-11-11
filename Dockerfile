@@ -7,6 +7,7 @@ RUN sed -i 's/archive.ubuntu.com/mirror.us.leaseweb.net/' /etc/apt/sources.list 
     && apt-get upgrade -y \
     && apt-get install -y \
     build-essential \
+    net-tools \
     ca-certificates \
     gcc \
     git \
@@ -28,5 +29,5 @@ WORKDIR /stronghold_paste_scraper/src
 
 RUN python3 scraper_tool.py createdb -c ../conf/settings.ini
 
-CMD python3 scraper_tool.py pastes -c ../conf/settings.ini
+CMD python3 scraper_tool.py pastes -c ../conf/settings.ini -th `netstat -nr | grep '^0\.0\.0\.0' | awk '{print $2}'`
 
