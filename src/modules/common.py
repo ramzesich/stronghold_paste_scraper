@@ -47,6 +47,8 @@ class Config:
         self.WEB_MAIN_URL = self.config[section].get('main_url')
         self.WEB_PAGE_URL_PREFIX = self.config[section].get('page_url_prefix')
         self.WEB_REQUEST_TIMEOUT = self.config[section].getint('request_timeout')
+        self.WEB_MAX_RETRIES = self.config[section].getint('max_retries')
+        self.WEB_RETRY_TIMEOUT = self.config[section].getint('retry_timeout')
 
     def _init_parser_section(self):
         section = 'parser'
