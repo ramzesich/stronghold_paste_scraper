@@ -42,6 +42,7 @@ class Tool:
         arg_parser = self.arg_parser
         arg_parser.add_argument('module', choices=[mod for mod in sorted(self.modules)], help="cli module to run")
         arg_parser.add_argument('-c', '--config', help="configuration filepath", dest='config_filepath')
+        arg_parser.add_argument('-th', '--tor-host', help="tor proxy hostname", dest='tor_host', default='localhost')
 
     def _parse_arguments(self):
         self._init_modules()
@@ -53,8 +54,8 @@ class Tool:
         self._init_arguments()
         self.arguments = arg_parser.parse_args()
 
-    def _init_context(self, config_filepath):
-        self.context = Context(config_filepath)
+    def _init_context(self, config_filepath, tor_hostname):
+        self.context = Context(config_filepath, tor_hostname)
 
     @required_arguments(['config_filepath'])
     def pastes(self):
@@ -76,7 +77,7 @@ class Tool:
 
     def run(self):
         module, _ = self.modules[self.arguments.module]
-        self._init_context(config_filepath=self.arguments.config_filepath)
+        self._init_context(config_filepath=self.arguments.config_filepath, tor_hostname=self.arguments.tor_host)
         self.logger = self.context.create_logger("Scraping tool")
         try:
             module()

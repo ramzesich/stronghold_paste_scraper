@@ -6,8 +6,8 @@ from modules.common import Base
 class WebRequest(Base):
     def __init__(self, context):
         super().__init__(context)
-        self._proxies = {'http': self.context.config.TOR_HTTP_PROXY,
-                         'https': self.context.config.TOR_HTTPS_PROXY}
+        self._proxies = {'http': 'socks5://{}:{}'.format(self.context.config.TOR_HOSTNAME, self.context.config.TOR_HTTP_PROXY_PORT),
+                         'https': 'socks5://{}:{}'.format(self.context.config.TOR_HOSTNAME, self.context.config.TOR_HTTPS_PROXY_PORT)}
 
     def get(self, url, json=False):
         self.logger.debug("Requesting %s", url)

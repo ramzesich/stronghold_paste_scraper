@@ -35,11 +35,15 @@ class Navigator(Base):
     """
     Navigates through the Stronghold Paste using its pagination section
     """
+    def __init__(self, context):
+        super().__init__(context)
+        self.web_request = WebRequest(context)
+
     def navigate(self):
         """
         :return: web page url, web page number
         """
-        landing_page = WebRequest(self.context).get(self.context.config.WEB_MAIN_URL)
+        landing_page = self.web_request.get(self.context.config.WEB_MAIN_URL)
         if not landing_page:
             raise StopIteration
         parser = Parser(self.context, landing_page)

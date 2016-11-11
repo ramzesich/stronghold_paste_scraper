@@ -10,8 +10,9 @@ from modules.tor import WebRequest
 class Runner(Base):
     def __init__(self, context):
         super().__init__(context)
+        self.web_request = WebRequest(context)
         self.navigator = Navigator(context)
-        self.model_collection = ModelCollection(self.context, model=Paste)
+        self.model_collection = ModelCollection(context, model=Paste)
 
     def _is_the_paste_new(self, paste, latest_paste):
         if paste.date < latest_paste.date:
@@ -26,7 +27,7 @@ class Runner(Base):
         :param latest_paste: latest stored paste object to compare extracted pastes against
         :return: list (of extracted pastes), boolean (whether the entire page was extracted)
         """
-        page = WebRequest(self.context).get(url)
+        page = self.web_request.get(url)
         parser = Parser(self.context, page)
         pastes = list()
         for paste in parser.extract_new_paste():
