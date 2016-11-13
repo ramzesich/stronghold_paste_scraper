@@ -29,5 +29,4 @@ WORKDIR /stronghold_paste_scraper/src
 
 RUN python3 scraper_tool.py createdb -c ../conf/settings.ini
 
-CMD python3 scraper_tool.py pastes -c ../conf/settings.ini -th `netstat -nr | grep '^0\.0\.0\.0' | awk '{print $2}'`
-
+CMD python3 scraper_tool.py pastes -c ../conf/settings.ini 
