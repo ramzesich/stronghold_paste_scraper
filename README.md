@@ -20,5 +20,5 @@ You may use a TOR Docker image for that purpose. For example:
 
 Pull and run the Stronghold Paste scraper Docker image:
 
-`docker run -d --name scraper shemsu/strongscrape`
+`docker run -d --network host --name scraper shemsu/strongscrape`
 
