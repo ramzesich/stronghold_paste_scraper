@@ -16,9 +16,9 @@ It is a huge image and probably not the best choice, but it was used for its sim
 Make sure TOR is installed and running. It should listen on port 9050.
 You may use a TOR Docker image for that purpose. For example:
 
-`docker run -p 9050:9050 --name tor osminogin/tor-simple &`
+`docker run -d -p 9050:9050 --name tor osminogin/tor-simple`
 
 Pull and run the Stronghold Paste scraper Docker image:
 
-`docker run --name scraper shemsu/strongscrape &`
+`docker run -d --name scraper shemsu/strongscrape`
 
