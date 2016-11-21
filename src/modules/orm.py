@@ -63,7 +63,7 @@ class Model(Base):
 
     To lessen the possibility of collision with column names,
     all the internal properties and methods are named
-    starting with __property__ and __method__ respectfully.
+    starting with __property__ and __method__ respectively.
 
     Every method with its name prefixed with __normalize__ will be run
     each time save() is called.
